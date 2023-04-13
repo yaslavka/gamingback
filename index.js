@@ -17,6 +17,8 @@ const { sochetStartChart } = require("./service/orderClose");
 const multer = require("multer");
 const UserControllers = require("./controllers/UserControllers");
 const fileUpload = require("express-fileupload");
+const {createClient}=require('redis')
+const {createCluster}=require('redis')
 //const exchangeParser = require("./service/exchangeParser");
 
 // const https = require("https");
@@ -120,14 +122,16 @@ const writeOffMatrixTableCount = async () => {
     await updateStatistic(allComet, allPlanet)
   }
 }
+const redis = createClient({url: `redis://default:foobared@${process.env.DB_HOST}:${process.env.PORT_REDIS}`})
 
-
+redis.on('error', err => console.log('Redis Client Error', err));
 const start = async () => {
   try {
     await sequelize.authenticate();
     await sequelize.sync();
     server.listen(80, () => console.log(`server started on port 5000`));
     //httpsServer.listen(443, () => console.log(`server started on port 443`));
+    await redis.connect();
     const typeMatrixSecondCount = await models.TypeMatrixSecond.count()
     const typeMatrixThirdCount = await models.TypeMatrixThird.count()
     if (typeMatrixSecondCount === 0) {

@@ -34,8 +34,8 @@ const checkCombination = (symbols) => {
           }
         } else {
           if (
-            arrHorizontal.length > 1 &&
-            code.code !== symbols[i][j + 1]?.code
+              arrHorizontal.length > 1 &&
+              code.code !== symbols[i][j + 1]?.code
           ) {
             arrHorizontal.map((item, index) => {
               resultHorizontal.push({ 0: item.v, 1: item.h, code: item.code });
@@ -48,7 +48,7 @@ const checkCombination = (symbols) => {
         arrHorizontal[0] = code;
       }
     }
-    if (arrHorizontal.length < 2) {
+    if (arrHorizontal.length >1) {
       arrHorizontal = [];
     }
   }
@@ -79,29 +79,29 @@ const checkCombination = (symbols) => {
         arrVertikal[0] = code;
       }
     }
-    if (arrVertikal.length < 2) {
+    if (arrVertikal.length > 1) {
       arrVertikal = [];
     }
   }
   const result = [...resultHorizontal, ...resultVertikal];
   const table = {};
   let res = result
-    .filter((i) => !table[`${i[0]}${i[1]}`] && (table[`${i[0]}${i[1]}`] = 1))
-    .sort((a, b) => {
-      return a.code - b.code;
-    });
+      .filter((i) => !table[`${i[0]}${i[1]}`] && (table[`${i[0]}${i[1]}`] = 1))
+      .sort((a, b) => {
+        return a.code - b.code;
+      });
   let filterRes = [];
 
-  for (let i = 1; i < 8; i++) {
+  for (let i = 1; i < 10; i++) {
     let temp = res.filter((j) => i === j.code);
     if (temp.length > 3) {
       for (let j = 0; j < temp.length; j++) {
         temp[j]["pos"] = `${+temp[j][0]}${+temp[j][1]}`;
       }
       filterRes.push(
-        temp.sort((a, b) => {
-          return a.pos - b.pos;
-        })
+          temp.sort((a, b) => {
+            return a.pos - b.pos;
+          })
       );
       temp = [];
     }
@@ -113,11 +113,13 @@ const checkCombination = (symbols) => {
     let temp = [...arr];
     for (let i = 0; i < arr.length; i++) {
       if (
-        ((item[0] === arr[i][0] + 1 && item[1] === arr[i][1]) ||
-          (item[0] === arr[i][0] && item[1] === arr[i][1] + 1) ||
-          (item[0] === arr[i][0] - 1 && item[1] === arr[i][1]) ||
-          (item[0] === arr[i][0] && item[1] === arr[i][1] - 1)) &&
-        !(item[0] === arr[i][0] && item[1] === arr[i][1])
+          (
+              (item[0] === arr[i][0] + 1 && item[1] === arr[i][1]) ||
+              (item[0] === arr[i][0] && item[1] === arr[i][1] + 1) ||
+              (item[0] === arr[i][0] - 1 && item[1] === arr[i][1]) ||
+              (item[0] === arr[i][0] && item[1] === arr[i][1] - 1)
+          )
+          && !(item[0] === arr[i][0] && item[1] === arr[i][1])
       ) {
         temp.push(item);
       } else if ((((+item[0]) + (+item[1])) === ((+arr[i][0]) + (+arr[i][1]))) && (arr[i]['code'] === symbols[arr[i][0]][arr[i][1]['code']])) {
@@ -138,10 +140,10 @@ const checkCombination = (symbols) => {
       }
       let table = {};
       let tempArrTwo = tempArr.filter(
-        (i) => !table[`${i[0]}${i[1]}`] && (table[`${i[0]}${i[1]}`] = 1)
+          (i) => !table[`${i[0]}${i[1]}`] && (table[`${i[0]}${i[1]}`] = 1)
       );
 
-      if (tempArrTwo.length > 4) {
+      if (tempArrTwo.length > 3) {
         winResult.push([...tempArrTwo]);
 
       }
@@ -161,11 +163,12 @@ const checkCombination = (symbols) => {
 
 };
 
+
 class GameControllers {
   async project(req, res) {
     const data = JSON.parse(req.body.data);
     let { request_id, bet, customVars, action } = data;
-    console.log(data)
+    console.log(req.query)
     const decodeToken = jwt.decode(customVars);
     const user = await User.findOne({
         where: { username: decodeToken.username },
@@ -200,6 +203,7 @@ class GameControllers {
     };
 
     const symbols = symbolCombination();
+    console.log(symbols)
     const init = {
       bet,
       fixed_bet: bets["1"]["5"],
@@ -210,10 +214,6 @@ class GameControllers {
       directory,
       symbols,
     };
-
-    if (action === 'init' ) {
-      return res.json({ balance, denomination: b, init });
-    }
     let check = checkCombination(symbols);
     let result = {};
     if (check.length > 0) {
@@ -234,14 +234,14 @@ class GameControllers {
         },
         total: 5,
       };
-      const spin = {
+      const drop = {
         bet,
         fixed_bet: 1,
         type: "spin",
         symbols,
         wins,
         multiplier: 1,
-        extra: { skill_scale: check.length},
+        extra: { skill_scale:  check.length },
         drop_ready: true,
         drop: {
           symbols,
@@ -252,7 +252,7 @@ class GameControllers {
       result = {
         balance,
         denomination: 1,
-        spin,
+        spin:drop,
         available_actions: { 0: "drop" },
         macro_round: { wins: { total: 5 } },
       };
@@ -266,9 +266,9 @@ class GameControllers {
         wins,
         multiplier: 1,
         extra: {
-          skill_scale: check.length,
-          waiting_for_event: "boss_1",
-          next_boss: 1,
+          skill_scale: 0,
+          waiting_for_event: "boss_2",
+          next_boss: 2,
           events_chain: {},
         },
         drop_ready: false,
@@ -287,7 +287,13 @@ class GameControllers {
       };
     }
 
-    return res.json(result);
+    if (action === 'init' ) {
+      return res.json({ balance, denomination: b, init });
+    }else if (action === 'spin'){
+      return res.json(result)
+    }else if (action === 'drop'){
+      return res.json(result)
+    }
   }
 }
 
